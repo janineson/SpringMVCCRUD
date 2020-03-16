@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<mapper namespace="org.hello.mapper.Notice">
+	<sql id="selectWhere">
+    	WHERE DEL_YN = 'N'
+    	<if test="managerYn == null or managerYn == ''">
+       		  AND USE_YN = 'Y'
+       	</if>
+       	<if test="keyword != null and keyword != ''">
+       		 AND (TITLE LIKE concat('%', #{keyword}, '%') OR 
+	    CONTENTS LIKE concat('%', #{keyword}, '%'))	
+       	</if>
+    </sql>
+    <sql id="selectOrder">    
+       	 <if test="managerYn != null and managerYn != ''">
+       		 order by CRT_DTTM DESC, POSTING_DATE DESC 
+       		<!--   <if test="byPage != null and byPage != ''">
+		       		 limit #{pageid}, 10 
+		       	</if> -->
+       	</if>
+       	 <if test="managerYn == null or managerYn == ''">
+       		 order by POSTING_DATE DESC, CRT_DTTM DESC
+     <!--   		 <if test="byPage != null">
+	       		 limit #{pageid}, 10 
+	       	</if> -->
+       	</if>
+    </sql>
+    
+    
+    <insert id="insert">
+        <selectKey keyProperty="no" resultType="int" order="BEFORE">
+        	select SEQ.nextval from dual  
+   		</selectKey>    
+	    
+        insert into tb_notice (
+        NO,
+        TITLE,
+        CONTENTS,
+        AUTHOR,
+        CRT_DTTM,
+        POSTING_DATE,
+        STICKY_YN,
+        STICKY_STR_DATE,
+        STICKY_END_DATE,
+        VIEW_COUNT,
+        USE_YN,
+        DEL_YN) values (
+        #{no},
+        #{title},
+        #{contents},
+        #{author},
+        NOW(),
+        COALESCE(#{postingDate}, SYSDATE),
+        #{stickyYn},
+        #{stickyStrDate},
+        #{stickyEndDate},
+        0,
+        #{useYn},
+        'N'
+        )
+    </insert>
+
+    <select id="list" resultType="org.hello.domain.NoticeVO">
+        select 
+        NO as no,
+        TITLE as title,
+        CONTENTS as contents,
+        AUTHOR as author,
+        CRT_DTTM as crtDttm,
+        MOD_USER as modUser,
+        MOD_DTTM as modDttm,
+        POSTING_DATE as postingDate,
+        STICKY_YN as stickyYn,
+        STICKY_STR_DATE as stickyStrDate,
+        STICKY_END_DATE as stickyEndDate,
+        VIEW_COUNT as viewCount,
+        USE_YN as useYn,
+        DEL_YN as delYn,
+        MOD_DTTM as modDttm,
+        MOD_USER as modUser
+        from tb_notice 
+    	<include refid="selectWhere" />
+        <include refid="selectOrder" />
+    </select>
+    
+
+    <select id="select" resultType="org.hello.domain.NoticeVO">
+            select  
+            NO as no,
+	        TITLE as title,
+	        CONTENTS as contents,
+	        AUTHOR as author,
+	        CRT_DTTM as crtDttm,
+	        MOD_USER as modUser,
+        	MOD_DTTM as modDttm,
+	        POSTING_DATE as postingDate,
+	        STICKY_YN as stickyYn,
+	        STICKY_STR_DATE as stickyStrDate,
+	        STICKY_END_DATE as stickyEndDate,
+	        VIEW_COUNT as viewCount,
+	        USE_YN as useYn,
+	        DEL_YN as delYn
+         from tb_notice where NO = #{no}
+    </select>
+ 
+    <delete id="delete">
+        update tb_notice set DEL_YN='Y' where NO = #{no}
+    </delete>
+    
+    <update id="update">
+        update tb_notice set 
+        TITLE=#{title},
+        CONTENTS = #{contents},
+        MOD_USER = #{author},
+        MOD_DTTM = SYSDATE,
+        POSTING_DATE = #{postingDate},
+        STICKY_YN= #{stickyYn},
+        STICKY_STR_DATE= #{stickyStrDate},
+        STICKY_END_DATE= #{stickyEndDate},
+        USE_YN= #{useYn} 
+        where NO = #{no}
+    </update>
+ 
+    <update id="updateCount">
+        update tb_notice set VIEW_COUNT=VIEW_COUNT + 1 where NO = #{no}
+    </update>
+</mapper>
